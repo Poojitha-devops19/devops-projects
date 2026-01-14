@@ -6,7 +6,7 @@ A simple Node.js application containerized with Docker to demonstrate containeri
 This project demonstrates how to containerize a simple Node.js application using Docker. It covers building Docker images, running containers, pushing images to Docker Hub, and managing containers.
 
 **Architecture diagram:**
-![Architecture Diagram](Docker flow.png)
+[Architecture Diagram](architecture_diagram.png)
 
 **##🛠️ Tools and Services Used:**
 
