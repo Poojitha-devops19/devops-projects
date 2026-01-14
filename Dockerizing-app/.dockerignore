@@ -1,1 +1,4 @@
 node_modules
+spec/
+.git
+*.log
