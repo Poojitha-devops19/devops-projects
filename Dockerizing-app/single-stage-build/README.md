@@ -56,6 +56,10 @@ Dockerizing-app/
     docker logs containername
     or
     docker logs containerid
+9.To view the content of Docker container
+    docker inspect
+10.Cleanup the old docker images from local repo using below command:
+    docker image rm image-id
 
 **🐞 Issues & Fixes**
 1.Port conflict-
