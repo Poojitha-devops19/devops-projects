@@ -1,155 +1,91 @@
+# Cloud Native Voting App on AWS EKS
 
+## 📌 Overview
+This project demonstrates deploying a **cloud native voting application** on **Amazon EKS (Elastic Kubernetes Service)**.  
+It includes:
+- **Frontend** (React app)
+- **Backend API** (Go service)
+- **Database** (MongoDB StatefulSet with replica set)
 
-# Cloud-Native Web Voting Application with Kubernetes
+The setup showcases Kubernetes concepts like **Deployments, Services, StatefulSets, Headless Services, PersistentVolumes**, and integration with **AWS EBS CSI driver** for storage.
 
-This cloud-native web application is built using a mix of technologies. It's designed to be accessible to users via the internet, allowing them to vote for their preferred programming language out of six choices: C#, Python, JavaScript, Go, Java, and NodeJS.
+---
 
-## Technical Stack
+## 🛠️ Prerequisites
+- AWS account with permissions to create EKS clusters and EC2 instances
+- IAM roles for **EKS control plane** and **EC2 worker nodes**
+- AWS CLI and `kubectl` installed
+- Git installed for cloning manifests
+- EBS CSI driver enabled in the cluster
 
-- **Frontend**: The frontend of this application is built using React and JavaScript. It provides a responsive and user-friendly interface for casting votes.
+---
 
-- **Backend and API**: The backend of this application is powered by Go (Golang). It serves as the API handling user voting requests. MongoDB is used as the database backend, configured with a replica set for data redundancy and high availability.
+## ⚙️ Setup Steps
 
-## Kubernetes Resources
+### 1. Create EKS Cluster
+- Create an EKS cluster with a **NodeGroup** (2 nodes of `t2.medium` instance type).
+- Optionally create an EC2 `t2.micro` instance for administration.
 
-To deploy and manage this application effectively, we leverage Kubernetes and a variety of its resources:
+### 2. IAM Role for EC2
+Attach the following IAM policy to the EC2 admin instance (to connect to cluster from control plane, kubectl needs permissions to connect to cluster):
 
-- **Namespace**: Kubernetes namespaces are utilized to create isolated environments for different components of the application, ensuring separation and organization.
-
-- **Secret**: Kubernetes secrets store sensitive information, such as API keys or credentials, required by the application securely.
-
-- **Deployment**: Kubernetes deployments define how many instances of the application should run and provide instructions for updates and scaling.
-
-- **Service**: Kubernetes services ensure that users can access the application by directing incoming traffic to the appropriate instances.
-
-- **StatefulSet**: For components requiring statefulness, such as the MongoDB replica set, Kubernetes StatefulSets are employed to maintain order and unique identities.
-
-- **PersistentVolume and PersistentVolumeClaim**: These Kubernetes resources manage the storage required for the application, ensuring data persistence and scalability.
-
-## Learning Opportunities
-
-Creating and deploying this cloud-native web voting application with Kubernetes offers a valuable learning experience. Here are some key takeaways:
-
-1. **Containerization**: Gain hands-on experience with containerization technologies like Docker for packaging applications and their dependencies.
-
-2. **Kubernetes Orchestration**: Learn how to leverage Kubernetes to efficiently manage, deploy, and scale containerized applications in a production environment.
-
-3. **Microservices Architecture**: Explore the benefits and challenges of a microservices architecture, where the frontend and backend are decoupled and independently scalable.
-
-4. **Database Replication**: Understand how to set up and manage a MongoDB replica set for data redundancy and high availability.
-
-5. **Security and Secrets Management**: Learn best practices for securing sensitive information using Kubernetes secrets.
-
-6. **Stateful Applications**: Gain insights into the nuances of deploying stateful applications within a container orchestration environment.
-
-7. **Persistent Storage**: Understand how Kubernetes manages and provisions persistent storage for applications with state.
-
-By working through this project, you'll develop a deeper understanding of cloud-native application development, containerization, Kubernetes, and the various technologies involved in building and deploying modern web applications.
-
-
-### **************************Steps to Deploy**************************
-
-Youtube Video to refer:
-
-[![Video Tutorial](https://img.youtube.com/vi/pTmIoKUeU-A/0.jpg)](https://youtu.be/pTmIoKUeU-A)
-
-Susbcribe:
-
-[https://www.youtube.com/@cloudchamp?
-](https://www.youtube.com/@cloudchamp?sub_confirmation=1)
-
-
-Create EKS cluster with NodeGroup (2 nodes of t2.medium instance type)
-Create EC2 Instance t2.micro (Optional)
-
-##IAM role for ec2	
-```
+```json
 {
-	"Version": "2012-10-17",
-	"Statement": [{
-		"Effect": "Allow",
-		"Action": [
-			"eks:DescribeCluster",
-			"eks:ListClusters",
-			"eks:DescribeNodegroup",
-			"eks:ListNodegroups",
-			"eks:ListUpdates",
-			"eks:AccessKubernetesApi"
-		],
-		"Resource": "*"
-	}]
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": [
+      "eks:DescribeCluster",
+      "eks:ListClusters",
+      "eks:DescribeNodegroup",
+      "eks:ListNodegroups",
+      "eks:ListUpdates",
+      "eks:AccessKubernetesApi"
+    ],
+    "Resource": "*"
+  }]
 }
-```
 
-Install Kubectl:
-```
-curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
-chmod +x ./kubectl
-sudo cp ./kubectl /usr/local/bin
-export PATH=/usr/local/bin:$PATH
-```
+### 3. Install tools
+  # Install kubectl
+     curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
+     chmod +x ./kubectl
+     sudo cp ./kubectl /usr/local/bin
+     export PATH=/usr/local/bin:$PATH
 
-Install AWScli:
-```
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-```
+ # Install AWS CLI
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+   unzip awscliv2.zip
+   sudo ./aws/install
 
-Once the Cluster is ready run the command to set context:
-```
-aws eks update-kubeconfig --name EKS_CLUSTER_NAME --region us-west-2
-```
+##4. Configure kubectl
+  bash
+  aws eks update-kubeconfig --name cluster1 --region us-west-2
+  kubectl get nodes
 
-To check the nodes in your cluster run
-```
-kubectl get nodes
-```
+##5. Clone Repo
+   clone your manifests files in EC2.
 
-If using EC2 and getting the "You must be logged in to the server (Unauthorized)" error, refer this: https://repost.aws/knowledge-center/eks-api-server-unauthorized-error
-
-Clone the github repo
-```
-git clone https://github.com/N4si/K8s-voting-app.git
-```
-
-**Create CloudChamp Namespace**
-```
-kubectl create ns cloudchamp
-
-kubectl config set-context --current --namespace cloudchamp
-```
-
-**MONGO Database Setup**
+##6.Create Namespace
+   bash
+   kubectl create ns ns1
+   kubectl config set-context --current --namespace ns1
 
 
-To create Mongo statefulset with Persistent volumes, run the command in manifests folder:
-```
-kubectl apply -f mongo-statefulset.yaml
-```
+📄 MongoDB Setup
+1. Deploy StatefulSet + Service
+bash
+kubectl apply -f mongo-statefulset.yaml (3 MongoDB Pods (mongo-0, mongo-1, mongo-2)
+                                 3 PVCs (each bound to an EBS disk for persistence))
+kubectl apply -f mongo-service.yaml(1 Headless Service (mongo) providing DNS for Pod‑to‑Pod communication)
+(PV (PersistentVolume) → “Cluster‑level storage resource, like an actual EBS disk.”
+PVC (PersistentVolumeClaim) → “Pod’s request for storage, bound to a matching PV.”)
 
-Mongo Service
-```
-kubectl apply -f mongo-service.yaml
-```
+test with this kubectl get svc -n ns1
+to make default namespace instead of adding everytime - kubectl config set-context --current --namespace
 
-Create a temporary network utils pod. Enter into a bash session within it. In the terminal run the following command:
-```
-kubectl run --rm utils -it --image praqma/network-multitool -- bash
-```
-Within the new utils pod shell, execute the following DNS queries:
-```
-for i in {0..2}; do nslookup mongo-$i.mongo; done
-```
-Note: This confirms that the DNS records have been created successfully and can be resolved within the cluster, 1 per MongoDB pod that exists behind the Headless Service - earlier created. 
+2.Initialize Replica Set
 
-Exit the utils container
-```
-exit
-```
-
-On the `mongo-0` pod, initialise the Mongo database Replica set. In the terminal run the following command:
-```
 cat << EOF | kubectl exec -it mongo-0 -- mongo
 rs.initiate();
 sleep(2000);
@@ -162,19 +98,12 @@ cfg.members[0].host = "mongo-0.mongo:27017";
 rs.reconfig(cfg, {force: true});
 sleep(5000);
 EOF
-```
 
-Note: Wait until this command completes successfully, it typically takes 10-15 seconds to finish, and completes with the message: bye
+Verify:
+kubectl exec -it mongo-0 -- mongo --eval "rs.status()" | grep "PRIMARY\|SECONDARY" (This command checks the health and role of each MongoDB Pod in the replica set)
 
+3.Load Sample Data
 
-To confirm run this in the terminal:
-```
-kubectl exec -it mongo-0 -- mongo --eval "rs.status()" | grep "PRIMARY\|SECONDARY"
-```
-
-Load the Data in the database by running this command:
-## Note: use langdb not langdb() as shown in the video
-```
 cat << EOF | kubectl exec -it mongo-0 -- mongo
 use langdb;
 db.languages.insert({"name" : "csharp", "codedetail" : { "usecase" : "system, web, server-side", "rank" : 5, "compiled" : false, "homepage" : "https://dotnet.microsoft.com/learn/csharp", "download" : "https://dotnet.microsoft.com/download/", "votes" : 0}});
@@ -186,98 +115,57 @@ db.languages.insert({"name" : "nodejs", "codedetail" : { "usecase" : "system, we
 
 db.languages.find().pretty();
 EOF
-```
 
-Create Mongo secret:
-```
+4.Create Secret(which holds username and password for mongo db database)
 kubectl apply -f mongo-secret.yaml
-```
 
-**API Setup**
+Kubectl get all - 3 pods for mongo, 2 pods for api, one service (cluster ip) for mongo, deployment for api, replicaset for api, statefulset for mongo
 
-Create GO API deployment by running the following command:
-```
+📄 API Setup (loadbalancer and pods)
+1. Deploy API
 kubectl apply -f api-deployment.yaml
-```
 
-Expose API deployment through service using the following command:
-```
+2. Expose API
 kubectl expose deploy api \
  --name=api \
  --type=LoadBalancer \
  --port=80 \
  --target-port=8080
-```
 
-Next set the environment variable:
-
-```
-{
+3. Test API
 API_ELB_PUBLIC_FQDN=$(kubectl get svc api -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
-until nslookup $API_ELB_PUBLIC_FQDN >/dev/null 2>&1; do sleep 2 && echo waiting for DNS to propagate...; done
-curl $API_ELB_PUBLIC_FQDN/ok
-echo
-}
-```
-
-Test and confirm that the API route URL /languages, and /languages/{name} endpoints can be called successfully. In the terminal run any of the following commands:
-```
 curl -s $API_ELB_PUBLIC_FQDN/languages | jq .
-curl -s $API_ELB_PUBLIC_FQDN/languages/go | jq .
-curl -s $API_ELB_PUBLIC_FQDN/languages/java | jq .
-curl -s $API_ELB_PUBLIC_FQDN/languages/nodejs | jq .
-```
 
-If everything works fine, go ahead with Frontend setup.
-```
-{
-API_ELB_PUBLIC_FQDN=$(kubectl get svc api -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
-echo API_ELB_PUBLIC_FQDN=$API_ELB_PUBLIC_FQDN
-}
-```
+📄 Frontend Setup (loadbalancer and pods)
 
-**Frontend setup**
-
-Create the Frontend Deployment resource. In the terminal run the following command:
-```
+1. Deploy Frontend
 kubectl apply -f frontend-deployment.yaml
-```
 
-Create a new Service resource of LoadBalancer type. In the terminal run the following command:
-```
+2. Expose Frontend
 kubectl expose deploy frontend \
  --name=frontend \
  --type=LoadBalancer \
  --port=80 \
  --target-port=8080
-```
 
-Confirm that the Frontend ELB is ready to recieve HTTP traffic. In the terminal run the following command:
-```
-{
+3. Test Frontend
 FRONTEND_ELB_PUBLIC_FQDN=$(kubectl get svc frontend -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
-until nslookup $FRONTEND_ELB_PUBLIC_FQDN >/dev/null 2>&1; do sleep 2 && echo waiting for DNS to propagate...; done
-curl -I $FRONTEND_ELB_PUBLIC_FQDN
-}
-```
-
-Generate the Frontend URL for browsing. In the terminal run the following command:
-```
 echo http://$FRONTEND_ELB_PUBLIC_FQDN
-```
+(That command fetches the public URL of your frontend LoadBalancer so you can open the React app in a browser.)
 
-Test the full end-to-end cloud native application
+🛠️ Issues and Fixes
+	 Issue: Nodes stuck in NotReady state
+		• After creating the EKS cluster and node group, all nodes remained in NotReady.
+		• kubectl describe node showed:
+           Ready: False
+           NetworkPluginNotReady: cni plugin not initialized
+		    • System pods (e.g. metrics-server) were stuck in Pending because no Ready nodes existed.
+		    • The aws-node DaemonSet (Amazon VPC CNI plugin) was missing from the kube-system namespace.
+	 Fix:
+	    Installed the Amazon VPC CNI plugin as an EKS add‑on:	
+         aws eks create-addon --cluster-name cluster1 --addon-name vpc-cni --region us-west-2
+	 Learning from this fix:
+	    The Container Network Interface (CNI) plugin is what provides networking for Pods in Kubernetes. In EKS, the Amazon VPC CNI plugin lets Pods get IP addresses directly from the VPC, enabling them to communicate with each other and with other AWS resources. Without it, nodes can’t initialize networking, so they stay in NotReady.
 
- Using your local workstation's browser - browse to the URL created in the previous output.
-
-After the voting application has loaded successfully, vote by clicking on several of the **+1** buttons, this will generate AJAX traffic which will be sent back to the API via the API's assigned ELB.
 
 
-Query the MongoDB database directly to observe the updated vote data. In the terminal execute the following command:
-```
-kubectl exec -it mongo-0 -- mongo langdb --eval "db.languages.find().pretty()"
-```
-
-## **Summary**
-
-In this Project, you learnt how to deploy a cloud native application into EKS. Once deployed and up and running, you used your local workstation's browser to test out the application. You later confirmed that your activity within the application generated data which was captured and recorded successfully within the MongoDB ReplicaSet back end within the cluster.
