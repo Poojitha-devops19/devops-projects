@@ -45,35 +45,35 @@ Attach the following IAM policy to the EC2 admin instance (to connect to cluster
     "Resource": "*"
   }]
 }
-
-### 3. Install tools
-  # Install kubectl
+```
+**### 3. Install tools**
+  **Install kubectl**
      curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.24.11/2023-03-17/bin/linux/amd64/kubectl
      chmod +x ./kubectl
      sudo cp ./kubectl /usr/local/bin
      export PATH=/usr/local/bin:$PATH
 
- # Install AWS CLI
+ ** **Install AWS CLI**
    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
    unzip awscliv2.zip
    sudo ./aws/install
 
-##4. Configure kubectl
+****##4. Configure kubectl****
   bash
   aws eks update-kubeconfig --name cluster1 --region us-west-2
   kubectl get nodes
 
-##5. Clone Repo
+****##5. Clone Repo****
    clone your manifests files in EC2.
 
-##6.Create Namespace
+******##6.Create Namespace******
    bash
    kubectl create ns ns1
    kubectl config set-context --current --namespace ns1
 
-
-📄 MongoDB Setup
-1. Deploy StatefulSet + Service
+**
+**📄 MongoDB Setup****
+**1. Deploy StatefulSet + Service**
 bash
 kubectl apply -f mongo-statefulset.yaml (3 MongoDB Pods (mongo-0, mongo-1, mongo-2)
                                  3 PVCs (each bound to an EBS disk for persistence))
@@ -84,7 +84,7 @@ PVC (PersistentVolumeClaim) → “Pod’s request for storage, bound to a match
 test with this kubectl get svc -n ns1
 to make default namespace instead of adding everytime - kubectl config set-context --current --namespace
 
-2.Initialize Replica Set
+**2.Initialize Replica Set**
 
 cat << EOF | kubectl exec -it mongo-0 -- mongo
 rs.initiate();
@@ -102,7 +102,7 @@ EOF
 Verify:
 kubectl exec -it mongo-0 -- mongo --eval "rs.status()" | grep "PRIMARY\|SECONDARY" (This command checks the health and role of each MongoDB Pod in the replica set)
 
-3.Load Sample Data
+**3.Load Sample Data**
 
 cat << EOF | kubectl exec -it mongo-0 -- mongo
 use langdb;
@@ -116,44 +116,44 @@ db.languages.insert({"name" : "nodejs", "codedetail" : { "usecase" : "system, we
 db.languages.find().pretty();
 EOF
 
-4.Create Secret(which holds username and password for mongo db database)
+**4.Create Secret**(which holds username and password for mongo db database)
 kubectl apply -f mongo-secret.yaml
 
 Kubectl get all - 3 pods for mongo, 2 pods for api, one service (cluster ip) for mongo, deployment for api, replicaset for api, statefulset for mongo
 
-📄 API Setup (loadbalancer and pods)
-1. Deploy API
+**📄 API Setup (loadbalancer and pods)**
+**1. Deploy API**
 kubectl apply -f api-deployment.yaml
 
-2. Expose API
+**2. Expose API**
 kubectl expose deploy api \
  --name=api \
  --type=LoadBalancer \
  --port=80 \
  --target-port=8080
 
-3. Test API
+**3. Test API**
 API_ELB_PUBLIC_FQDN=$(kubectl get svc api -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
 curl -s $API_ELB_PUBLIC_FQDN/languages | jq .
 
-📄 Frontend Setup (loadbalancer and pods)
+**📄 Frontend Setup (loadbalancer and pods)**
 
-1. Deploy Frontend
+**1. Deploy Frontend**
 kubectl apply -f frontend-deployment.yaml
 
-2. Expose Frontend
+**2. Expose Frontend**
 kubectl expose deploy frontend \
  --name=frontend \
  --type=LoadBalancer \
  --port=80 \
  --target-port=8080
 
-3. Test Frontend
+**3. Test Frontend**
 FRONTEND_ELB_PUBLIC_FQDN=$(kubectl get svc frontend -ojsonpath="{.status.loadBalancer.ingress[0].hostname}")
 echo http://$FRONTEND_ELB_PUBLIC_FQDN
 (That command fetches the public URL of your frontend LoadBalancer so you can open the React app in a browser.)
 
-🛠️ Issues and Fixes
+**🛠️ Issues and Fixes**
 	 Issue: Nodes stuck in NotReady state
 		• After creating the EKS cluster and node group, all nodes remained in NotReady.
 		• kubectl describe node showed:
