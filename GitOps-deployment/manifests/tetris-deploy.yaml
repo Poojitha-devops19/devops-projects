@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: tetris
-          image: panamareddy/tetris 
+          image: nasi101/tetris 
           ports:
             - containerPort: 80 
