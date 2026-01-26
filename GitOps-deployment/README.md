@@ -97,3 +97,17 @@ This project demonstrates how to set up a GitOps workflow using **ArgoCD** on an
             **Fix:** Create the Redis secret with the required `auth` key: ```bash kubectl -n argocd create secret                     generic argocd-redis \ --from-literal=auth=$(openssl rand -hex 16)
                 -After creating the secret, restart the Redis pod:
                     kubectl delete pod -n argocd -l app.kubernetes.io/name=argocd-redis
+     ** 3. LB stuck with EXTERNAL-IP <pending>**
+     **  issue**: tetris-service was stuck with EXTERNAL-IP <pending>.
+		           • The event log showed:
+                    Failed build model due to unable to resolve at least one subnet (0 match VPC and tags:    [kubernetes.io/role/internal-elb])
+		        • This meant EKS couldn’t find any subnets with the required tags to place the load balancer.
+	      **  Fix**
+		       •  added the correct AWS subnet tags:
+			            ○ Cluster ownership tag → kubernetes.io/cluster/GitOps = owned
+			            ○ Role tags → kubernetes.io/role/elb = 1 for public subnets, or kubernetes.io/role/internal-elb =  1 for private subnets
+		      • These tags tell EKS:
+			       ○ Which subnets belong to your cluster.
+			       ○ Whether they should be used for public or internal load balancers.
+	      Once the tags were applied, AWS was able to provision the load balancer, and your service got a working              external DNS name:
+         ec51b1c3bcf64f7d90b024f8ca9830f-102008180.us-west-2.elb.amazonaws.com
