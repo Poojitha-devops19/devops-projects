@@ -1,27 +1,3 @@
-<div align="center">
-  <img src="./public/assets/DevSecOps.png" alt="Logo" width="100%" height="100%">
-
-  <br>
-  <a href="http://netflix-clone-with-tmdb-using-react-mui.vercel.app/">
-    <img src="./public/assets/netflix-logo.png" alt="Logo" width="100" height="32">
-  </a>
-</div>
-
-<br />
-
-<div align="center">
-  <img src="./public/assets/home-page.png" alt="Logo" width="100%" height="100%">
-  <p align="center">Home Page</p>
-</div>
-
-# **Youtube Video for step by step Demonstration!**
-[![Video Tutorial](https://img.youtube.com/vi/g8X5AoqCJHc/0.jpg)](https://youtu.be/g8X5AoqCJHc)
-
-
-## Susbcribe:
-[https://www.youtube.com/@cloudchamp?
-](https://www.youtube.com/@cloudchamp?sub_confirmation=1)
-
 # Deploy Netflix Clone on Cloud using Jenkins - DevSecOps Project!
 
 ### **Phase 1: Initial Setup and Deployment**
@@ -29,7 +5,7 @@
 **Step 1: Launch EC2 (Ubuntu 22.04):**
 
 - Provision an EC2 instance on AWS with Ubuntu 22.04.
-- Connect to the instance using SSH.
+- Connect to the instance.
 
 **Step 2: Clone the Code:**
 
@@ -37,7 +13,7 @@
 - Clone your application's code repository onto the EC2 instance:
     
     ```bash
-    git clone https://github.com/N4si/DevSecOps-Project.git
+    git clone https://github.com/poojitha-devops19/DevSecOps.git
     ```
     
 
@@ -171,7 +147,8 @@ Create the token
 
 Goto Jenkins Dashboard → Manage Jenkins → Credentials → Add Secret Text. It should look like this
 
-After adding sonar token
+After adding sonar token, go to jenkins >system>sonarqube servers add by sonarqube path
+Then go to tools>add sonar scanner.
 
 Click on Apply and Save
 
@@ -181,7 +158,12 @@ Click on Apply and Save
 
 We will install a sonar scanner in the tools.
 
-Create a Jenkins webhook
+Create a Jenkins webhook-
+    Configure SonarQube webhook
+        • In SonarQube UI → Administration → Configuration → Webhooks.
+        • Add a webhook pointing to your Jenkins server:
+             http://<jenkins-server>:8080/sonarqube-webhook/
+         This allows SonarQube to notify Jenkins when analysis is complete.
 
 1. **Configure CI/CD Pipeline in Jenkins:**
 - Create a CI/CD pipeline in Jenkins to automate your application deployment.
@@ -204,7 +186,7 @@ pipeline {
         }
         stage('Checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/N4si/DevSecOps-Project.git'
+                git branch: 'main', url: 'https://github.com/Poojitha-devops19/DevSecOps-Project.git'
             }
         }
         stage("Sonarqube Analysis") {
@@ -294,7 +276,7 @@ pipeline{
         }
         stage('Checkout from Git'){
             steps{
-                git branch: 'main', url: 'https://github.com/N4si/DevSecOps-Project.git'
+                git branch: 'main', url: 'https://github.com/Poojitha-devops19/DevSecOps-Project.git'
             }
         }
         stage("Sonarqube Analysis "){
@@ -333,20 +315,20 @@ pipeline{
                 script{
                    withDockerRegistry(credentialsId: 'docker', toolName: 'docker'){   
                        sh "docker build --build-arg TMDB_V3_API_KEY=<yourapikey> -t netflix ."
-                       sh "docker tag netflix nasi101/netflix:latest "
-                       sh "docker push nasi101/netflix:latest "
+                       sh "docker tag netflix panamareddy/netflix:latest "
+                       sh "docker push panamareddy/netflix:latest "
                     }
                 }
             }
         }
         stage("TRIVY"){
             steps{
-                sh "trivy image nasi101/netflix:latest > trivyimage.txt" 
+                sh "trivy image panamareddy/netflix:latest > trivyimage.txt" 
             }
         }
         stage('Deploy to container'){
             steps{
-                sh 'docker run -d --name netflix -p 8081:80 nasi101/netflix:latest'
+                sh 'docker run -d --name netflix -p 8081:80 panamareddy/netflix:latest'
             }
         }
     }
@@ -681,6 +663,25 @@ That's it! You've successfully installed and set up Grafana to work with Prometh
 
 1. **Implement Notification Services:**
     - Set up email notifications in Jenkins or other notification mechanisms.
+        Set application password, add that in jenkins credentials,then go to system>email   notifications >add smtp authentication >465 port for smtp
+        configure pipeline by adding the step>
+         
+        
+        post {
+            always {
+                emailext(
+                    attachLog: true,
+                    subject: "${currentBuild.result}",
+                    body: """
+                        Project: ${env.JOB_NAME} <br/>
+                        Build Number: ${env.BUILD_NUMBER} <br/>
+                        URL: ${env.BUILD_URL} <br/>
+                    """,
+                    to: "poojitha7469@gmail.com",
+                    attachmentsPattern: "trivyfs.txt,trivyimage.txt"
+                )
+            }
+       }
 
 # Phase 6: Kubernetes
 
@@ -751,8 +752,3 @@ To deploy an application with ArgoCD, you can follow these steps, which I'll out
 
 4. **Access your Application**
    - To Access the app make sure port 30007 is open in your security group and then open a new tab paste your NodeIP:30007, your app should be running.
-
-**Phase 7: Cleanup**
-
-1. **Cleanup AWS EC2 Instances:**
-    - Terminate AWS EC2 instances that are no longer needed.
