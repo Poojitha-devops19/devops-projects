@@ -1,4 +1,4 @@
-<img width="562" height="269" alt="image" src="https://github.com/user-attachments/assets/a596d70e-27ef-40c6-8751-8d94283185d9" />**📦 Packer Project – Build Custom AMI with Nginx**
+ **📦 Packer Project – Build Custom AMI with Nginx**
     This project demonstrates how to use HashiCorp Packer to build a custom Amazon Machine Image (AMI) on AWS.
     The AMI comes pre‑installed with Nginx and has firewall rules enabled for ports 22 (SSH), 80 (HTTP), and 443   (HTTPS).
 
