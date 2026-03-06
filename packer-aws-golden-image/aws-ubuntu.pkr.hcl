@@ -9,7 +9,7 @@ packer {
 
 source "amazon-ebs" "ubuntu" {
   access_key    = ""
-  secret_key    = "80qqjldindsSgomesGjuooseoksgi9"
+  secret_key    = ""
   ami_name      = "my-first-packer-image"
   instance_type = "t2.micro"
   region        = "us-west-2"
